@@ -10,21 +10,20 @@ import Requests from "./components/Requests";
 
 function App() {
   return (
-    <div>
-      <Provider store={appStore}>
-        <BrowserRouter basename="/">
-          <Routes>
-            <Route path="/" element={<Body />}>
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/user/connections" element={<Connections />} />
-              <Route path="/user/requests/received" element={<Requests />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </Provider>
-    </div>
+    <Provider store={appStore}>
+      <BrowserRouter basename="/">
+        <Routes>
+          <Route path="/" element={<Body />}>
+            <Route index element={<Feed />} />
+            <Route path="feed" element={<Feed />} />
+            <Route path="login" element={<Login />} />
+            <Route path="profile/view" element={<Profile />} />
+            <Route path="user/connections" element={<Connections />} />
+            <Route path="user/requests/received" element={<Requests />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   );
 }
 

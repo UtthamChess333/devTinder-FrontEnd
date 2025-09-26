@@ -5,45 +5,62 @@ import axios from "axios";
 import { addUser } from "../utils/userSlice";
 import { BASE_URL } from "../utils/constants";
 
+// Helper for photo URL basic validation (adapt as needed)
+const isValidPhotoUrl = (url) => /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+
 const EditProfile = () => {
   const user = useSelector((store) => store.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // form states initialized with user data
-  const [firstName, setFirstName] = useState(user?.firstName || "");
-  const [lastName, setLastName] = useState(user?.lastName || "");
-  const [photoUrl, setPhotoUrl] = useState(user?.photoUrl || "");
-  const [age, setAge] = useState(user?.age || "");
-  const [gender, setGender] = useState(user?.gender || "");
-  const [about, setAbout] = useState(
-    user?.about || "This is a default about of the user!"
-  );
+  // Form states initialized with user data
+  const [form, setForm] = useState({
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    photoUrl: user?.photoUrl || "",
+    age: user?.age || "",
+    gender: user?.gender || "",
+    about: user?.about || ""
+  });
 
-  // feedback states
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // save profile
+  // Track which fields are edited
+  const [dirtyFields, setDirtyFields] = useState({});
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setDirtyFields((prev) => ({ ...prev, [name]: value !== user[name] }));
+  };
+
+  // Save profile with only changed fields
   const saveProfile = async () => {
+    const updatedData = {};
+    Object.keys(dirtyFields).forEach((key) => {
+      if (dirtyFields[key]) updatedData[key] = form[key];
+    });
+
+    // Require at least one field to change
+    if (Object.keys(updatedData).length === 0) {
+      setError("Please edit at least one field to update your profile.");
+      return;
+    }
+
+    // Optional photo URL validation
+    if (updatedData.photoUrl && !isValidPhotoUrl(updatedData.photoUrl)) {
+      setError("Please provide a valid image URL (jpg, jpeg, png, gif, webp).");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
       setSuccess("");
 
-      const res = await axios.patch(
-        BASE_URL + "/profile/edit",
-        {
-          firstName,
-          lastName,
-          photoUrl,
-          age: age ? Number(age) : undefined,
-          gender: gender.toLowerCase(),
-          about,
-        },
-        { withCredentials: true }
-      );
+      const res = await axios.patch(BASE_URL + "/profile/edit", updatedData, { withCredentials: true });
 
       dispatch(addUser(res?.data?.data));
       setSuccess(res?.data?.message || "Profile updated successfully! ✅");
@@ -51,8 +68,8 @@ const EditProfile = () => {
 
       setTimeout(() => {
         setSuccess("");
-        navigate("/profile");
-      }, 3000);
+        navigate("/profile/view");
+      }, 2000);
     } catch (err) {
       setError(err.response?.data || err.message);
       setLoading(false);
@@ -64,54 +81,54 @@ const EditProfile = () => {
       {/* Left: Edit Form */}
       <div className="w-1/2 bg-gray-800 p-6 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Edit Profile</h2>
-
         {error && <p className="text-red-500 mb-2">{error}</p>}
         {success && <p className="text-green-500 mb-2">{success}</p>}
 
         <input
           type="text"
+          name="firstName"
           placeholder="First Name"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
+          value={form.firstName}
+          onChange={handleChange}
           className="w-full p-2 mb-3 border rounded bg-gray-700"
         />
-
         <input
           type="text"
+          name="lastName"
           placeholder="Last Name"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
+          value={form.lastName}
+          onChange={handleChange}
           className="w-full p-2 mb-3 border rounded bg-gray-700"
         />
-
         <input
           type="text"
+          name="photoUrl"
           placeholder="Photo URL"
-          value={photoUrl}
-          onChange={(e) => setPhotoUrl(e.target.value)}
+          value={form.photoUrl}
+          onChange={handleChange}
           className="w-full p-2 mb-3 border rounded bg-gray-700"
         />
-
         <input
           type="number"
+          name="age"
           placeholder="Age"
-          value={age}
-          onChange={(e) => setAge(e.target.value)}
+          value={form.age}
+          onChange={handleChange}
           className="w-full p-2 mb-3 border rounded bg-gray-700"
         />
-
         <input
           type="text"
+          name="gender"
           placeholder="Gender"
-          value={gender}
-          onChange={(e) => setGender(e.target.value)}
+          value={form.gender}
+          onChange={handleChange}
           className="w-full p-2 mb-3 border rounded bg-gray-700"
         />
-
         <textarea
+          name="about"
           placeholder="About"
-          value={about}
-          onChange={(e) => setAbout(e.target.value)}
+          value={form.about}
+          onChange={handleChange}
           className="w-full p-2 mb-3 border rounded bg-gray-700"
         />
 
@@ -124,27 +141,20 @@ const EditProfile = () => {
         </button>
       </div>
 
-      {/* Right: Always Visible Live Preview Card */}
+      {/* Right: Live Preview Card (buttons removed) */}
       <div className="w-1/3 bg-gray-800 p-6 rounded-lg shadow-md text-center">
         <img
-          src={
-            photoUrl || user?.photoUrl || "https://via.placeholder.com/150"
-          }
+          src={form.photoUrl || user?.photoUrl || "https://placehold.co/150"}
           alt="profile"
           className="w-40 h-40 rounded-full mx-auto mb-4 object-cover"
         />
         <h3 className="text-xl font-bold">
-          {firstName || user?.firstName} {lastName || user?.lastName}
+          {form.firstName || user?.firstName} {form.lastName || user?.lastName}
         </h3>
-        <p className="text-gray-300 mt-2">{about || user?.about}</p>
+        <p className="text-gray-300 mt-2">{form.about || user?.about}</p>
         <p className="text-sm text-gray-400 mt-1">
-          {age || user?.age} | {gender || user?.gender}
+          {form.age || user?.age} | {form.gender || user?.gender}
         </p>
-
-        <div className="flex justify-center mt-6 space-x-4">
-          <button className="bg-blue-600 px-4 py-2 rounded-lg">Ignore</button>
-          <button className="bg-pink-500 px-4 py-2 rounded-lg">Interested</button>
-        </div>
       </div>
     </div>
   );
