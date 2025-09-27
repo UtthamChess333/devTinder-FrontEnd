@@ -15,10 +15,10 @@ const Body = () => {
   const fetchUser = async () => {
     if (userData) return;
     try {
-      const res = await axios.get(BASE_URL + "/profile/view", {
+      const res = await axios.get(`${BASE_URL}/profile/view`, {
         withCredentials: true,
       });
-      dispatch(addUser(res?.data)); 
+      dispatch(addUser(res?.data));
     } catch (err) {
       if (err.response && err.response.status === 401) {
         navigate("/login");
@@ -30,11 +30,17 @@ const Body = () => {
     fetchUser();
   }, []);
 
-
   return (
-    <div>
+    <div className="flex flex-col min-h-screen w-full bg-gray-100 text-gray-900">
+      {/* Navbar */}
       <NavBar />
-      <Outlet />
+
+      {/* Main content */}
+      <main className="flex-1 w-full px-6 py-16 bg-gray-100">
+        <Outlet />
+      </main>
+
+      {/* Footer */}
       <Footer />
     </div>
   );

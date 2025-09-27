@@ -10,12 +10,10 @@ const Requests = () => {
 
   const reviewRequest = async (status, _id) => {
     try {
-      const res = await axios.post(
-        BASE_URL + "/request/review/" + status + "/" + _id,
+      await axios.post(
+        `${BASE_URL}/request/review/${status}/${_id}`,
         {},
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       dispatch(removeRequest(_id));
     } catch (err) {
@@ -24,9 +22,9 @@ const Requests = () => {
   };
 
   useEffect(() => {
-    const fetchConnections = async () => {
+    const fetchRequests = async () => {
       try {
-        const res = await axios.get(BASE_URL + "/user/requests/received", {
+        const res = await axios.get(`${BASE_URL}/user/requests/received`, {
           withCredentials: true,
         });
         dispatch(addRequests(res?.data?.data));
@@ -34,45 +32,60 @@ const Requests = () => {
         console.log(err.message);
       }
     };
-    fetchConnections();
+    fetchRequests();
   }, [dispatch]);
 
-  if (!requests) return <h1>Loading...</h1>;
+  if (!requests) return <h1 className="text-center mt-20">Loading...</h1>;
   if (requests.length === 0)
-    return <h1 className="flex justify-center my-10">No Requests Found</h1>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <h1 className="text-2xl font-semibold text-gray-600">No Requests Found</h1>
+      </div>
+    );
 
   return (
-    <div className="text-center my-10">
-      <h1 className="text-bold text-3xl">Requests</h1>
+    <div className="min-h-screen bg-gray-100 py-20 px-4 flex flex-col items-center space-y-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Requests</h1>
+
       {requests.map((request) => {
         const { firstName, lastName, photoUrl, age, gender, about, _id } =
           request.fromUserId;
+
         return (
           <div
-            className="flex justify-between items-center m-4 p-4 rounded-lg bg-base-300 w-2/3 mx-auto "
             key={_id}
+            className="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg flex items-center justify-between space-x-4 hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
           >
-            <img
-              alt="photo"
-              className="w-20 h-20 rounded-full"
-              src={photoUrl}
-            />
-            <div className="text-left mx-4">
-              <h2 className="font-bold text-xl">
-                {firstName + " " + lastName}
-              </h2>
-              {age && gender && <p>{age + " " + gender}</p>}
-              <p>{about}</p>
+            {/* User Info */}
+            <div className="flex items-center space-x-4">
+              <img
+                alt="photo"
+                className="w-20 h-20 rounded-full object-cover border-2 border-indigo-400"
+                src={photoUrl || "https://placehold.co/150"}
+              />
+              <div className="flex flex-col text-left">
+                <h2 className="font-semibold text-xl text-gray-800">
+                  {firstName} {lastName}
+                </h2>
+                {(age || gender) && (
+                  <p className="text-gray-500 text-sm">
+                    {age ? age : ""} {gender ? "| " + gender : ""}
+                  </p>
+                )}
+                <p className="text-gray-600 mt-1 text-sm line-clamp-3">{about}</p>
+              </div>
             </div>
-            <div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col space-y-2">
               <button
-                className="btn btn-primary mx-2"
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                 onClick={() => reviewRequest("rejected", request._id)}
               >
                 Reject
               </button>
               <button
-                className="btn btn-secondary mx-2 "
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
                 onClick={() => reviewRequest("accepted", request._id)}
               >
                 Accept
